@@ -1,0 +1,44 @@
+name: Go Build
+
+on:
+  push:
+    branches:
+      - main # Oder den Namen Ihres Hauptzweigs
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux]
+        goarch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.20.3
+
+      - name: Cache Go modules
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Build binary
+        run: |
+          export GOOS=${{ matrix.goos }}
+          export GOARCH=${{ matrix.goarch }}
+          go build -o build/${{ matrix.goos }}-${{ matrix.goarch }}-webcron
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: binaries
+          path: |
+            build/*
