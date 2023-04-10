@@ -1,9 +1,9 @@
-name: Go Build
+name: Build
 
 on:
   push:
     branches:
-      - main # Oder den Namen Ihres Hauptzweigs
+      - main
 
 jobs:
   build:
@@ -15,15 +15,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4
         with:
           go-version: 1.20.3
 
       - name: Cache Go modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -37,7 +37,7 @@ jobs:
           go build -o build/${{ matrix.goos }}-${{ matrix.goarch }}-webcron
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: binaries
           path: |
