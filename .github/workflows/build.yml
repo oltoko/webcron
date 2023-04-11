@@ -10,35 +10,45 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [linux]
         goarch: [amd64, arm64]
+        docker_arch: [amd64, arm64v8]
+        dockerfile: [Dockerfile.amd64, Dockerfile.arm64]
+        include:
+          - goarch: amd64
+            docker_arch: amd64
+            dockerfile: Dockerfile.amd64
+          - goarch: arm64
+            docker_arch: arm64v8
+            dockerfile: Dockerfile.arm64
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
         with:
-          go-version: 1.20.3
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
         with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=sha
 
-      - name: Build binary
-        run: |
-          export GOOS=${{ matrix.goos }}
-          export GOARCH=${{ matrix.goarch }}
-          go build -o build/${{ matrix.goos }}-${{ matrix.goarch }}-webcron
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
         with:
-          name: binaries
-          path: |
-            build/*
+          context: .
+          platforms: ${{ matrix.docker_arch }}/linux
+          dockerfile: docker/${{ matrix.dockerfile }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
