@@ -1,8 +1,0 @@
-FROM amd64/golang:1 AS builder
-WORKDIR /src
-COPY . .
-RUN go build -o webcron-amd64
-
-FROM amd64/alpine:3
-COPY --from=builder /src/webcron-amd64 /app/webcron
-ENTRYPOINT ["/app/webcron"]

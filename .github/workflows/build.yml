@@ -13,23 +13,6 @@ jobs:
       contents: read
       packages: write
 
-    strategy:
-      matrix:
-        goarch: [amd64, arm64]
-        docker_arch: [amd64, arm64v8]
-        include:
-          - goarch: amd64
-            docker_arch: amd64
-            dockerfile: Dockerfile.amd64
-          - goarch: arm64
-            docker_arch: arm64v8
-            dockerfile: Dockerfile.arm64
-        exclude:
-          - goarch: amd64
-            docker_arch: arm64v8
-          - goarch: arm64
-            docker_arch: amd64
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -41,20 +24,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/oltoko/webcron
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=sha
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: oltoko/webcron:latest
+          platforms: linux/amd64, linux/arm/v8
